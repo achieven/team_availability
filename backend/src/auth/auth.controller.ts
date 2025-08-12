@@ -1,0 +1,58 @@
+import { Controller, Post, Body, UseGuards, Request, Get, Res, UnauthorizedException } from '@nestjs/common';
+import { AuthService, LoginDto, RegisterDto } from './auth.service';
+import { SessionAuthGuard } from './session-auth.guard';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('login')
+  async login(@Body() loginDto: LoginDto, @Request() req, @Res() res) {
+    try {
+    const user = await this.authService.login(loginDto);
+    req.session.userId = user.id;
+    req.session.userEmail = user.email;
+    return user;
+    } catch (error) {
+        if (error instanceof UnauthorizedException) {
+            throw error
+        }
+        res.status(500).json({error: 'Internal server error'});
+    }
+  }
+
+  @Post('register')
+  async register(@Body() registerDto: RegisterDto, @Request() req, @Res() res) {
+    try {
+
+    const result = await this.authService.register(registerDto);
+    return result;
+    } catch (error) {
+        if (error instanceof UnauthorizedException) {
+            throw error
+        }
+        res.status(500).json({error: 'Internal server error'});
+    }
+  }
+
+  @Post('logout')
+  @UseGuards(SessionAuthGuard)
+  async logout(@Request() req, @Res() res) {
+    try {
+        req.session.destroy();
+        return { message: 'Logged out successfully' };
+    } catch (error) {
+        res.status(500).json({error: 'Internal server error'});
+    }
+  }
+
+  @Get('me')
+  @UseGuards(SessionAuthGuard)
+  async getProfile(@Request() req) {
+    return {
+      userId: req.session.userId,
+      userEmail: req.session.userEmail,
+      message: 'Authenticated via session'
+    };
+  }
+}
