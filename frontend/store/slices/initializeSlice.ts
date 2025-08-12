@@ -5,85 +5,108 @@ interface User {
   id: string;
   email: string;
   name: string;
+  status: 'available' | 'busy' | 'away' | 'offline';
 }
 
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
+interface InitializeState {
+  isInitialized: boolean;
+  users: any | null;
+  teams: any | null;
   loading: boolean;
   error: string | null;
+  user: User | null;
 }
 
-const initialState: AuthState = {
-  user: null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
-  isAuthenticated: false,
+const initialState: InitializeState = {
+  isInitialized: false,
+  users: null,
+  teams: null,
   loading: false,
   error: null,
+  user: null,
 };
 
-export const initializeDatabase = createAsyncThunk(
-  'initializeDatabase',
+export const initializeApp = createAsyncThunk(
+  'initialize/app',
   async (_, { rejectWithValue }) => {
     try {
-      await axios.post('http://localhost:3001/api/auth/logout');
-      return null;
+      const response = await axios.post('http://localhost:3001/api/initialize', {
+        withCredentials: true,
+      });
+      
+      return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+      // If error, backend might be down
+      return rejectWithValue('Backend service unavailable');
     }
   }
 );
 
-const authSlice = createSlice({
-  name: 'auth',
+export const getProfile = createAsyncThunk(
+  'initialize/profile',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get('http://localhost:3001/api/auth/me', {
+        withCredentials: true,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue('Failed to fetch profile');
+    }
+  }
+);
+
+const initializeSlice = createSlice({
+  name: 'initialize',
   initialState,
   reducers: {
-    clearError: (state) => {
+    resetInitialization: (state) => {
+      state.isInitialized = false;
+      state.users = null;
+      state.teams = null;
+      state.loading = false;
       state.error = null;
     },
-    setToken: (state, action: PayloadAction<string>) => {
-      state.token = action.payload;
-      state.isAuthenticated = true;
+    setUsersAndTeams: (state, action: PayloadAction<any>) => {
+      state.users = action.payload.users;
+      state.teams = action.payload.teams;
+    },
+    setProfile: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(login.pending, (state) => {
+      .addCase(initializeApp.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action) => {
+      .addCase(initializeApp.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.isInitialized = true;
+        state.users = action.payload.users;
+        state.teams = action.payload.teams;
+        state.error = null;
       })
-      .addCase(login.rejected, (state, action) => {
+      .addCase(initializeApp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(register.pending, (state) => {
+      .addCase(getProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(register.fulfilled, (state, action) => {
+      .addCase(getProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
         state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.error = null;
       })
-      .addCase(register.rejected, (state, action) => {
+      .addCase(getProfile.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
       })
-      .addCase(logout.fulfilled, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-      });
   },
 });
 
-export const { clearError, setToken } = authSlice.actions;
-export default authSlice.reducer;
+export const { resetInitialization, setUsersAndTeams, setProfile } = initializeSlice.actions;
+export default initializeSlice.reducer;

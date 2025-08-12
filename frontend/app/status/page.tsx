@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
@@ -20,10 +20,14 @@ const statusOptions = [
 ];
 
 export default function StatusPage() {
+  console.log('StatusPage component rendered');
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-  const { currentStatus, loading, error } = useSelector((state: RootState) => state.status);
+  const { currentStatus, loading, error } = useSelector((state: RootState) => state.status as any);
+  const hasRedirected = useRef(false);
+  
+  console.log('Auth state:', { isAuthenticated, user });
   
   const {
     register,
@@ -33,17 +37,24 @@ export default function StatusPage() {
   } = useForm<StatusForm>();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    console.log('StatusPage useEffect triggered - isAuthenticated:', isAuthenticated, 'hasRedirected:', hasRedirected.current);
+    
+    if (!isAuthenticated && !hasRedirected.current) {
+      console.log('Redirecting to login');
+      hasRedirected.current = true;
       router.push('/login');
       return;
     }
     
-    dispatch(fetchCurrentStatus());
-  }, [isAuthenticated, router, dispatch]);
+    if (isAuthenticated) {
+      console.log('Fetching current status');
+      dispatch(fetchCurrentStatus());
+    }
+  }, [isAuthenticated]); // Remove router and dispatch from dependencies
 
   useEffect(() => {
     if (currentStatus) {
-      setValue('status', currentStatus);
+      setValue('status', currentStatus.status);
     }
   }, [currentStatus, setValue]);
 
@@ -102,12 +113,12 @@ export default function StatusPage() {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Current Status</h3>
                 <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(currentStatus)}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${getStatusColor(currentStatus.status)}`}></div>
                   <span className="text-sm font-medium text-gray-900">
-                    {getStatusLabel(currentStatus)}
+                    {getStatusLabel(currentStatus.status)}
                   </span>
                   {currentStatus.message && (
-                    <span className="text-sm text-gray-600">- {currentStatus}</span>
+                    <span className="text-sm text-gray-600">- {currentStatus.message}</span>
                   )}
                 </div>
               </div>
@@ -133,17 +144,7 @@ export default function StatusPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Message (Optional)
-                </label>
-                <textarea
-                  {...register('message')}
-                  rows={3}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  placeholder="Add a custom message..."
-                />
-              </div>
+
 
               {error && (
                 <div className="rounded-md bg-red-50 p-4">

@@ -2,11 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 export interface Status {
-  id: string;
-  userId: string;
   status: 'available' | 'busy' | 'away' | 'offline';
-  message?: string;
-  lastUpdated: string;
 }
 
 interface StatusState {
@@ -65,7 +61,7 @@ const statusSlice = createSlice({
       })
       .addCase(fetchCurrentStatus.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentStatus = action.payload.status;
+        state.currentStatus = action.payload;
       })
       .addCase(fetchCurrentStatus.rejected, (state, action) => {
         state.loading = false;
@@ -77,7 +73,7 @@ const statusSlice = createSlice({
       })
       .addCase(updateStatus.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentStatus = action.payload.status;
+        state.currentStatus = action.payload;
       })
       .addCase(updateStatus.rejected, (state, action) => {
         state.loading = false;

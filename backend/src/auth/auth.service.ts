@@ -98,8 +98,4 @@ export class AuthService {
       return null;
     }
   }
-
-  async findUserById(id: string): Promise<User | null> {
-    return await this.userDaoService.findOne(id);
-  }
 }

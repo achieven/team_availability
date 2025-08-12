@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database.service';
 import { BaseDaoService } from './base-dao.service';
-import { MutateInSpec } from 'couchbase';
+import { MutateInSpec, TransactionAttemptContext } from 'couchbase';
 
 @Injectable()
 export class UserDaoService extends BaseDaoService implements OnModuleInit {
+    private dummyUsers = [
+        'a@gmail.com', 'b@gmail.com', 'c@gmail.com'
+    ];
 
     constructor(
         protected readonly databaseService: DatabaseService
@@ -20,7 +23,7 @@ export class UserDaoService extends BaseDaoService implements OnModuleInit {
     async findUserByEmail(email: string): Promise<any | null> {
         const query = `
             SELECT * FROM ${this.bucketScopeCollection} 
-            WHERE email = $email AND type = "user" 
+            WHERE email = $email 
             LIMIT 1
         `;
         const result = await this.cluster.query(query, {parameters: {email}});
@@ -42,21 +45,34 @@ export class UserDaoService extends BaseDaoService implements OnModuleInit {
             LIMIT 1
         `;
         const result = await this.cluster.query(query, {parameters: {userId}});
-        return result.rows[0]?.status;
+        return result.rows[0];
     }
 
-    async insertUsers(): Promise<any> {
-        const users = [
-            'a@gmail.com', 'b@gmail.com', 'c@gmail.com'
-        ];
-        let promises = [];
-        for (const user of users) {
-            promises.push(this.insert({
+    async insertUsers(transactionCtx: TransactionAttemptContext, hashedPassword: string): Promise<any> {
+        let insertPromises = [];  
+        for (const user of this.dummyUsers) {
+            const id = this.generateId();
+            insertPromises.push(transactionCtx.insert(this.collection, id ,{
+                id,
                 email: user,
-                password: 'password',
+                password: hashedPassword,
             }));
         }
-        return Promise.all(promises);
+        return await Promise.all(insertPromises);
+        
+    }
+
+    async getDummyUsers(transactionCtx: TransactionAttemptContext | null): Promise<any> {
+        const query = `
+            SELECT * FROM ${this.bucketScopeCollection} 
+            WHERE email IN [${this.dummyUsers.map(user => `"${user}"`).join(',')}]
+        `;
+        if (transactionCtx) {
+            const result = await transactionCtx.query(query);
+            return result.rows.map(row => row[this.collectionName]);
+        }
+        const result = await this.query(query);
+        return result.map(row => row[this.collectionName]);
     }
 
     protected async createIndexes(): Promise<void> {}

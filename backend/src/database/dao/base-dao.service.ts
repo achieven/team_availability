@@ -13,7 +13,7 @@ export class BaseDaoService implements OnModuleInit {
     protected scopeName  : string;
     protected collection : Collection;
     protected collectionName : string;
-
+    
     constructor(
         bucketName: string,
         scopeName: string,
@@ -22,8 +22,8 @@ export class BaseDaoService implements OnModuleInit {
             this.bucketName = bucketName;
             this.scopeName = scopeName;
             this.collectionName = collectionName;
-        }
-
+    }
+    
     async onModuleInit() {
         this.cluster = await this.databaseService.getCluster();
         this.bucket = this.cluster.bucket(this.bucketName);
@@ -38,72 +38,60 @@ export class BaseDaoService implements OnModuleInit {
     protected get bucketScopeCollection() {
         return `${this.bucketName}.${this.scopeName}.${this.collectionName}`;
     }
-
-    async findOne(id: string): Promise<any> {
-        try {
-          const result = await this.collection.get(id);
-          return result.content;
-        } catch (error: any) {
-          if (error.code === DocumentNotFoundError) {
-            return null;
-          }
-          throw error;
-        }
-      }
     
-      async insert(doc: any): Promise<any> {
+    async insert(doc: any): Promise<any> {
         const id = doc.id || doc._id || this.generateId();
         const document = { ...doc, id, _id: id };
         const result = await this.collection.insert(id, document);
         return { id, ...document, cas: result.cas };
-      }
+    }
 
-      async mutateIn(key: string, specs: any[], options?: any): Promise<any> {
-        const collection = await this.collection;
-        console.log(this.collectionName,'mutateIn', key);
-        return collection.mutateIn(key, specs, options);
-      }
+    async mutateIn(key: string, specs: any[], options?: any): Promise<any> {
+    const collection = await this.collection;
+    console.log(this.collectionName,'mutateIn', key);
+    return collection.mutateIn(key, specs, options);
+    }
     
-      async update(id: string, doc: any): Promise<any> {
+    async update(id: string, doc: any): Promise<any> {
         try {
-          const existing = await this.collection.get(id);
-          const updatedDoc = { ...existing.content, ...doc, id, _id: id };
-          const result = await this.collection.replace(id, updatedDoc, { cas: existing.cas });
-          return { id, ...updatedDoc, cas: result.cas };
+            const existing = await this.collection.get(id);
+            const updatedDoc = { ...existing.content, ...doc, id, _id: id };
+            const result = await this.collection.replace(id, updatedDoc, { cas: existing.cas });
+            return { id, ...updatedDoc, cas: result.cas };
         } catch (error: any) {
-          if (error.code === DocumentNotFoundError) {
+            if (error.code === DocumentNotFoundError) {
             // Document doesn't exist, create it
             return await this.insert(doc);
-          }
-          throw error;
+            }
+            throw error;
         }
-      }
+    }
     
-      async delete(id: string): Promise<any> {
+    async delete(id: string): Promise<any> {
         try {
-          const result = await this.collection.remove(id);
-          return { id, cas: result.cas };
+            const result = await this.collection.remove(id);
+            return { id, cas: result.cas };
         } catch (error: any) {
-          if (error.code === DocumentNotFoundError) {
+            if (error.code === DocumentNotFoundError) {
             return null;
-          }
-          throw error;
+            }
+            throw error;
         }
-      }
+    }
 
-      async query(query: string, params?: any[]): Promise<any[]> {
+    async query(query: string, params?: any[]): Promise<any[]> {
         try {
-          const result = await this.cluster.query(query, { parameters: params });
-          return result.rows;
+            const result = await this.cluster.query(query, { parameters: params });
+            return result.rows;
         } catch (error) {
-          console.error('Query error:', error);
-          throw error;
+            console.error('Query error:', error);
+            throw error;
         }
-      }
+    }
     
-      private generateId(): string {
+    protected generateId(): string {
         return uuidv4();
-      }
+    }
 
     protected async createIndexes(): Promise<void> {}
 }

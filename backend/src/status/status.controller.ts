@@ -10,11 +10,11 @@ export class StatusController {
   @Get('current')
   async getCurrentStatus(@Request() req, @Res() res) {
     try {
-    const status = await this.statusService.getCurrentStatus(req.session.userId);
+    let status = await this.statusService.getCurrentStatus(req.session.userId);
     if (!status) {
-      return {status: 'offline'};
+        status =  {status: 'offline'};
     }
-      res.status(200).json({status});
+      res.status(200).json(status);
     } catch (error) {
       console.error('Error getting current status:', error);
       res.status(500).json({status: 'offline'});

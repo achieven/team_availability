@@ -9,10 +9,10 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Request() req, @Res() res) {
     try {
-    const user = await this.authService.login(loginDto);
-    req.session.userId = user.id;
-    req.session.userEmail = user.email;
-    return user;
+        const user = await this.authService.login(loginDto);
+        req.session.userId = user.id;
+        req.session.userEmail = user.email;
+        res.status(200).json(user);
     } catch (error) {
         if (error instanceof UnauthorizedException) {
             throw error
@@ -24,9 +24,8 @@ export class AuthController {
   @Post('register')
   async register(@Body() registerDto: RegisterDto, @Request() req, @Res() res) {
     try {
-
-    const result = await this.authService.register(registerDto);
-    return result;
+        const result = await this.authService.register(registerDto);
+        res.status(200).json(result);
     } catch (error) {
         if (error instanceof UnauthorizedException) {
             throw error
@@ -40,7 +39,7 @@ export class AuthController {
   async logout(@Request() req, @Res() res) {
     try {
         req.session.destroy();
-        return { message: 'Logged out successfully' };
+        res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
         res.status(500).json({error: 'Internal server error'});
     }

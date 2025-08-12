@@ -32,6 +32,15 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
+  // Check if app is initialized
+  const { isInitialized } = useSelector((state: RootState) => state.initialize);
+  
+  useEffect(() => {
+    if (!isInitialized) {
+      router.push('/');
+    }
+  }, [isInitialized, router]);
+
   useEffect(() => {
     return () => {
       dispatch(clearError());
@@ -49,13 +58,9 @@ export default function LoginPage() {
     }
   };
 
-  const toggleMode = () => {
-    setIsRegisterMode(!isRegisterMode);
-    reset();
-    dispatch(clearError());
-  };
 
-  const initializeDatabase = async () => {
+
+  const toggleMode = () => {
     setIsRegisterMode(!isRegisterMode);
     reset();
     dispatch(clearError());
@@ -176,15 +181,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-sm text-primary-600 hover:text-primary-500"
-            >
-              {"Initialize Database"}
-            </button>
-          </div>
+
         </form>
       </div>
     </div>

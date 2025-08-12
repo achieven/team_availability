@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { OnModuleInit } from '@nestjs/common';
 import { DatabaseService } from '../database.service';
 import { BaseDaoService } from './base-dao.service';
-import { MutateInSpec } from 'couchbase';
+import { MutateInSpec, TransactionAttemptContext } from 'couchbase';
 
 @Injectable()
 export class TeamDaoService extends BaseDaoService implements OnModuleInit {
+
+    private dummyTeams = ['Team 1','Team 2'];
 
     constructor(
         protected readonly databaseService: DatabaseService
@@ -27,34 +29,42 @@ export class TeamDaoService extends BaseDaoService implements OnModuleInit {
         return result.rows[0] ? result.rows[0][this.collectionName] : null;
     }
 
-    async insertTeams(users: string[]): Promise<any> {
-
+    async insertTeams(transactionCtx: TransactionAttemptContext, users: string[]): Promise<any> {
         const half = Math.ceil(users.length / 2);
-
         const firstHalf = users.slice(0, half);
-
         const secondHalf = users.slice(half);
 
-        const teams = [
-            {
-                id: '1',
-                name: 'Team 1',
-                members: firstHalf,
-            },
-            {
-                id: '2',
-                name: 'Team 2',
-                members: secondHalf,
+        const teams = this.dummyTeams.map((team, index) => {
+            return {
+                name: team,
+                members: index === 0 ? firstHalf : secondHalf
             }
-        ];
+        });
 
-        let promises = [];
+        let insertPromises = [];
 
         for (const team of teams) {
-            promises.push(this.insert(team));
+            const id = this.generateId();
+            insertPromises.push(transactionCtx.insert(this.collection, id, {
+                id,
+                ...team
+            }));
         }
 
-        return Promise.all(promises);
+        await Promise.all(insertPromises);
+    }
+
+    async getDummyTeams(transactionCtx: TransactionAttemptContext | null, userIds: any[]): Promise<any> {
+        const query = `
+            SELECT * FROM ${this.bucketScopeCollection} 
+            WHERE ANY member IN members SATISFIES member IN [${userIds.map(id => `"${id}"`).join(',')}] END
+        `;
+        if (transactionCtx) {
+            const result = await transactionCtx.query(query);
+            return result.rows.map(row => row[this.collectionName]);
+        }
+        const result = await this.query(query);
+        return result.map(row => row[this.collectionName]);
     }
 
     protected async createIndexes(): Promise<void> {}
