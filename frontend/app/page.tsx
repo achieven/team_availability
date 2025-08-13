@@ -4,30 +4,31 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
-import { initializeApp, getProfile } from '../store/slices/initializeSlice';
-import { setAuthenticated, setUser } from '../store/slices/authSlice';
+import { initializeApp } from '../store/slices/initializeSlice';
+import { setAuthenticated, user, getProfile } from '../store/slices/authSlice';
 
 export default function RootPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, users, teams } = useSelector((state: RootState) => state.initialize);
+  const { loading, error, user } = useSelector((state: RootState) => state.isInitialized);
 
   useEffect(() => {
     const initProfile = async () => {
               try {
-          const profile = await dispatch(getProfile()).unwrap();
-          if (profile) {
-            dispatch(setAuthenticated(true));
-            // Also set the user in the auth slice for consistency
-            dispatch(setUser(profile));
-            router.push('/status');
-          }
+          dispatch(getProfile()).unwrap();
         } catch (error) {
           console.error('Profile loading failed:', error);
         }
     }
     initProfile()
   }, []);
+
+
+  useEffect(() => {
+    if (user) {
+      router.push('/status');
+    }
+  }, [user]);
 
  
   const performInitialization = async () => {
@@ -82,27 +83,6 @@ export default function RootPage() {
         <p className="text-gray-600 mb-6">Your application is ready to use</p>
         
         {/* Display Users and Teams Data */}
-        {(users || teams) && (
-          <div className="mb-6 text-left">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Initialization Data:</h3>
-            {users && (
-              <div className="mb-4">
-                <h4 className="font-medium text-gray-700 mb-2">Users:</h4>
-                <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                  {JSON.stringify(users, null, 2)}
-                </pre>
-              </div>
-            )}
-            {teams && (
-              <div className="mb-4">
-                <h4 className="font-medium text-gray-700 mb-2">Teams:</h4>
-                <pre className="bg-gray-100 p-3 rounded text-sm overflow-auto">
-                  {JSON.stringify(teams, null, 2)}
-                </pre>
-              </div>
-            )}
-          </div>
-        )}
         
         <div className="space-y-3">
           <button 

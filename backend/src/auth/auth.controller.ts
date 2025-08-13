@@ -14,7 +14,7 @@ export class AuthController {
         req.session.userEmail = user.email;
         req.session.userName = user.name;
         req.session.teamId = user.teamId;
-        res.status(200).json(user);
+        res.status(200).json({success: true});
     } catch (error) {
         if (error instanceof UnauthorizedException) {
             throw error

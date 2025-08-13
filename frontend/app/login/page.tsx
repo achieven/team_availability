@@ -1,45 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { AppDispatch, RootState } from '../../store/store';
-import { login, register as registerUser, clearError } from '../../store/slices/authSlice';
+import { login, clearError } from '../../store/slices/authSlice';
+import { selectUser } from '../../store/slices/initializeSlice';
 
 interface AuthForm {
   email: string;
   password: string;
-  name?: string;
 }
 
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, loading, error } = useSelector((state: RootState) => state.auth);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const user = useSelector(selectUser);
   
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm<AuthForm>();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (user) {
       router.push('/status');
     }
-  }, [isAuthenticated, router]);
+  }, [user, router]);
 
-  // Check if app is initialized
-  const { isInitialized } = useSelector((state: RootState) => state.initialize);
-  
-  useEffect(() => {
-    if (!isInitialized) {
-      router.push('/');
-    }
-  }, [isInitialized, router]);
+
 
   useEffect(() => {
     return () => {
@@ -48,22 +40,7 @@ export default function LoginPage() {
   }, [dispatch]);
 
   const onSubmit = async (data: AuthForm) => {
-    if (isRegisterMode) {
-      if (!data.name) {
-        return;
-      }
-      await dispatch(registerUser({ email: data.email, password: data.password, name: data.name }));
-    } else {
-      await dispatch(login({ email: data.email, password: data.password }));
-    }
-  };
-
-
-
-  const toggleMode = () => {
-    setIsRegisterMode(!isRegisterMode);
-    reset();
-    dispatch(clearError());
+    await dispatch(login({ email: data.email, password: data.password }));
   };
 
   return (
@@ -71,7 +48,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isRegisterMode ? 'Create your account' : 'Sign in to your account'}
+            {'Sign in to your account'}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Team Availability Management
@@ -79,28 +56,6 @@ export default function LoginPage() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="rounded-md shadow-sm -space-y-px">
-            {isRegisterMode && (
-              <div>
-                <label htmlFor="name" className="sr-only">
-                  Full name
-                </label>
-                <input
-                  {...register('name', {
-                    required: isRegisterMode ? 'Name is required' : false,
-                  })}
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required={isRegisterMode}
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                  placeholder="Full name"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                )}
-              </div>
-            )}
             <div>
               <label htmlFor="email" className="sr-only">
                 Email address
@@ -118,7 +73,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm ${isRegisterMode ? '' : 'rounded-t-md'}`}
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
               />
               {errors.email && (
@@ -166,22 +121,10 @@ export default function LoginPage() {
               {loading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               ) : (
-                isRegisterMode ? 'Create Account' : 'Sign in'
+                'Sign in'
               )}
             </button>
           </div>
-          
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-sm text-primary-600 hover:text-primary-500"
-            >
-              {isRegisterMode ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-            </button>
-          </div>
-
-
         </form>
       </div>
     </div>

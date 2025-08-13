@@ -1,5 +1,22 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { clearProfile } from './initializeSlice';
+
+// Define getProfile here since it's used in this slice
+export const getProfile = createAsyncThunk(
+  'initialize/profile',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get('http://localhost:3001/api/auth/me', {
+        withCredentials: true,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue('Failed to fetch profile');
+    }
+  }
+);
 
 interface User {
   id: string;
@@ -23,12 +40,24 @@ const initialState: AuthState = {
 
 export const login = createAsyncThunk(
   'auth/login',
-  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+  async (credentials: { email: string; password: string }, { rejectWithValue, dispatch }) => {
     try {
       const response = await axios.post('http://localhost:3001/api/auth/login', credentials, {
         withCredentials: true
       });
       const { user } = response.data;
+      
+      // After successful login, fetch the full profile
+      try {
+        const profileResponse = await axios.get('http://localhost:3001/api/auth/me', {
+          withCredentials: true,
+        });
+        // Dispatch the profile to initializeSlice
+        dispatch(getProfile());
+      } catch (profileError) {
+        // If profile fetch fails, we still have the basic user info from login
+        console.warn('Failed to fetch profile after login:', profileError);
+      }
       
       return { user };
     } catch (error: any) {
@@ -37,29 +66,17 @@ export const login = createAsyncThunk(
   }
 );
 
-export const register = createAsyncThunk(
-  'auth/register',
-  async (userData: { email: string; password: string; name: string }, { rejectWithValue }) => {
-    try {
-      const response = await axios.post('http://localhost:3001/api/auth/register', userData, {
-        withCredentials: true
-      });
-      const { user } = response.data;
-      
-      return { user };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
-    }
-  }
-);
+
 
 export const logout = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       await axios.post('http://localhost:3001/api/auth/logout', {}, {
         withCredentials: true
       });
+      // Clear the profile from initializeSlice
+      dispatch(clearProfile());
       return null;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
@@ -77,9 +94,6 @@ const authSlice = createSlice({
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
     },
-    setUser: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -96,25 +110,24 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(register.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
-      });
+      }).addCase(getProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(getProfile.rejected, (state, action) => {
+        state.loading = false;
+      })
+
   },
 });
 
-export const { clearError, setAuthenticated, setUser } = authSlice.actions;
+export const { clearError, setAuthenticated } = authSlice.actions;
 export default authSlice.reducer;

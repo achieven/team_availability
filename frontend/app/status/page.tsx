@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { AppDispatch, RootState } from '../../store/store';
-import { logout } from '../../store/slices/authSlice';
+import { logout, getProfile } from '../../store/slices/authSlice';
 import { fetchCurrentStatus, updateStatus, clearError } from '../../store/slices/statusSlice';
 import { fetchTeamMembers } from '../../store/slices/teamSlice';
+import { selectUser } from '../../store/slices/initializeSlice';
 
 interface StatusForm {
   status: string;
@@ -24,10 +25,13 @@ export default function StatusPage() {
   console.log('StatusPage component rendered');
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const user = useSelector(selectUser);
   const { currentStatus, loading, error } = useSelector((state: RootState) => state.status as any);
   const { members: teamMembers, loading: teamLoading } = useSelector((state: RootState) => state.team);
   const hasRedirected = useRef(false);
+  
+  console.log('StatusPage state:', { isAuthenticated, user, currentStatus, loading, error });
   
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,21 +49,23 @@ export default function StatusPage() {
   } = useForm<StatusForm>();
 
   useEffect(() => {
-    console.log('StatusPage useEffect triggered - isAuthenticated:', isAuthenticated, 'hasRedirected:', hasRedirected.current);
+    console.log('StatusPage useEffect - user:', user, 'isAuthenticated:', isAuthenticated);
     
-    if (!isAuthenticated && !hasRedirected.current) {
-      console.log('Redirecting to login');
-      hasRedirected.current = true;
-      router.push('/login');
-      return;
-    }
-    
-    if (isAuthenticated) {
-      console.log('Fetching current status');
+    if (!user) {
+      // User is authenticated but profile not loaded, fetch it
+      console.log('Fetching profile...');
+      dispatch(getProfile());
+    } else if (user) {
+      // User profile is available, fetch status and team members
+      console.log('Fetching status and team members...');
       dispatch(fetchCurrentStatus());
-      dispatch(fetchTeamMembers(user?.id || ''));
+      dispatch(fetchTeamMembers(user.id));
+    } else if (!isAuthenticated) {
+      // Not authenticated, redirect to login
+      console.log('Not authenticated, redirecting to login...');
+      router.push('/login');
     }
-  }, [isAuthenticated]); // Remove router and dispatch from dependencies
+  }, [user, dispatch, router]);
 
   useEffect(() => {
     if (currentStatus) {
@@ -118,8 +124,25 @@ export default function StatusPage() {
     return matchesSearch && matchesStatus;
   }) || [];
 
-  if (!isAuthenticated) {
-    return null;
+  // Show loading state while authentication is being checked
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  // Show loading state while user profile is being fetched
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { getProfile } from './authSlice';
 
 interface User {
   id: string;
@@ -28,31 +29,17 @@ const initialState: InitializeState = {
 
 export const initializeApp = createAsyncThunk(
   'initialize/app',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       const response = await axios.post('http://localhost:3001/api/initialize', {
         withCredentials: true,
       });
       
+      dispatch(getProfile());
       return response.data;
     } catch (error: any) {
       // If error, backend might be down
       return rejectWithValue('Backend service unavailable');
-    }
-  }
-);
-
-export const getProfile = createAsyncThunk(
-  'initialize/profile',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get('http://localhost:3001/api/auth/me', {
-        withCredentials: true,
-      });
-
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue('Failed to fetch profile');
     }
   }
 );
@@ -68,12 +55,8 @@ const initializeSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
-    setUsersAndTeams: (state, action: PayloadAction<any>) => {
-      state.users = action.payload.users;
-      state.teams = action.payload.teams;
-    },
-    setProfile: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
+    clearProfile: (state) => {
+      state.user = null;
     },
   },
   extraReducers: (builder) => {
@@ -108,5 +91,10 @@ const initializeSlice = createSlice({
   },
 });
 
-export const { resetInitialization, setUsersAndTeams, setProfile } = initializeSlice.actions;
+export const { resetInitialization, clearProfile } = initializeSlice.actions;
+
+// Selectors
+export const selectUser = (state: { isInitialized: InitializeState }) => state.isInitialized.user;
+export const selectIsInitialized = (state: { isInitialized: InitializeState }) => state.isInitialized.isInitialized;
+
 export default initializeSlice.reducer;

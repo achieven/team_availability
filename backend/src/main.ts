@@ -25,7 +25,7 @@ async function bootstrap() {
     transform: true,
   }));
 
-  const redisHost = process.env.REDIS_HOST || 'redis'
+  const redisHost = process.env.REDIS_HOST || 'localhost'
   const redisPort = parseInt(process.env.REDIS_PORT) || 6379
   const redisClient = new Redis(redisPort, redisHost);
 

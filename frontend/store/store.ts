@@ -9,7 +9,7 @@ export const store = configureStore({
     auth: authReducer,
     status: statusReducer,
     team: teamReducer,
-    initialize: initializeReducer,
+    isInitialized: initializeReducer,
   },
 });
 
