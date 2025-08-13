@@ -31,7 +31,9 @@ export default function StatusPage() {
   
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
   
   console.log('Auth state:', { isAuthenticated, user });
   
@@ -71,6 +73,20 @@ export default function StatusPage() {
     };
   }, [dispatch]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setIsStatusDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleLogout = async () => {
     await dispatch(logout());
     router.push('/login');
@@ -96,7 +112,8 @@ export default function StatusPage() {
       member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = statusFilter === '' || member.status === statusFilter;
+    const matchesStatus = statusFilter.length === 0 || 
+      (member.status && statusFilter.includes(member.status));
     
     return matchesSearch && matchesStatus;
   }) || [];
@@ -220,22 +237,63 @@ export default function StatusPage() {
               </div>
             </div>
             
-            {/* Status Filter */}
-            <div className="sm:w-48">
+            {/* Status Filter Dropdown */}
+            <div className="sm:w-48 relative" ref={statusDropdownRef}>
               <label htmlFor="status-filter" className="sr-only">Filter by status</label>
-              <select
-                id="status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              <button
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               >
-                <option value="">All Statuses</option>
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <span className="block truncate">
+                  {statusFilter.length === 0 
+                    ? 'All Statuses' 
+                    : statusFilter.length === 1 
+                      ? statusOptions.find(opt => opt.value === statusFilter[0])?.label 
+                      : `${statusFilter.length} Statuses Selected`
+                  }
+                </span>
+                <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </button>
+              
+              {isStatusDropdownOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                  {statusOptions.map((option) => (
+                    <label key={option.value} className="flex items-center px-3 py-2 text-sm cursor-pointer hover:bg-gray-100">
+                      <input
+                        type="checkbox"
+                        checked={statusFilter.includes(option.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setStatusFilter([...statusFilter, option.value]);
+                          } else {
+                            setStatusFilter(statusFilter.filter(status => status !== option.value));
+                          }
+                        }}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      />
+                      <span className="ml-3 text-gray-900">{option.label}</span>
+                    </label>
+                  ))}
+                  {statusFilter.length > 0 && (
+                    <div className="border-t border-gray-200 pt-2 mt-2">
+                      <button
+                        onClick={() => {
+                          setStatusFilter([]);
+                          setIsStatusDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm text-primary-600 hover:bg-gray-100"
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
