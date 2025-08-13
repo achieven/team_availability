@@ -133,7 +133,7 @@ export default function StatusPage() {
                   Update Your Status
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Welcome, {user?.name || user?.email}
+                  Hello {user?.name}, you are {currentStatus?.status}
                 </p>
               </div>
               <button
@@ -144,25 +144,10 @@ export default function StatusPage() {
               </button>
             </div>
 
-            {currentStatus && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Current Status</h3>
-                <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full ${getStatusColor(currentStatus.status)}`}></div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {getStatusLabel(currentStatus.status)}
-                  </span>
-                  {currentStatus.message && (
-                    <span className="text-sm text-gray-600">- {currentStatus.message}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
+                  Update my current status to:
                 </label>
                 <select
                   {...register('status', { required: 'Status is required' })}

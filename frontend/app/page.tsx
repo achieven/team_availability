@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { initializeApp, getProfile } from '../store/slices/initializeSlice';
-import { setAuthenticated } from '../store/slices/authSlice';
+import { setAuthenticated, setUser } from '../store/slices/authSlice';
 
 export default function RootPage() {
   const router = useRouter();
@@ -14,15 +14,17 @@ export default function RootPage() {
 
   useEffect(() => {
     const initProfile = async () => {
-      try {
-        const profile = await dispatch(getProfile()).unwrap();
-        if (profile) {
-          dispatch(setAuthenticated(true));
-          router.push('/status');
+              try {
+          const profile = await dispatch(getProfile()).unwrap();
+          if (profile) {
+            dispatch(setAuthenticated(true));
+            // Also set the user in the auth slice for consistency
+            dispatch(setUser(profile));
+            router.push('/status');
+          }
+        } catch (error) {
+          console.error('Profile loading failed:', error);
         }
-      } catch (error) {
-        console.error('Profile loading failed:', error);
-      }
     }
     initProfile()
   }, []);

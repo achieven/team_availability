@@ -12,6 +12,7 @@ export class AuthController {
         const user = await this.authService.login(loginDto);
         req.session.userId = user.id;
         req.session.userEmail = user.email;
+        req.session.userName = user.name;
         req.session.teamId = user.teamId;
         res.status(200).json(user);
     } catch (error) {
@@ -38,7 +39,8 @@ export class AuthController {
   async getProfile(@Request() req) {
     return {
       userId: req.session.userId,
-      userEmail: req.session.userEmail,
+      email: req.session.userEmail,
+      name: req.session.userName,
       teamId: req.session.teamId,
     };
   }
