@@ -29,6 +29,10 @@ export default function StatusPage() {
   const { members: teamMembers, loading: teamLoading } = useSelector((state: RootState) => state.team);
   const hasRedirected = useRef(false);
   
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  
   console.log('Auth state:', { isAuthenticated, user });
   
   const {
@@ -85,6 +89,17 @@ export default function StatusPage() {
     const option = statusOptions.find(opt => opt.value === status);
     return option?.label || 'Unknown';
   };
+
+  // Filter team members based on search term and status filter
+  const filteredTeamMembers = teamMembers?.filter((member) => {
+    const matchesSearch = searchTerm === '' || 
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === '' || member.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }) || [];
 
   if (!isAuthenticated) {
     return null;
@@ -176,15 +191,61 @@ export default function StatusPage() {
       {/* Team Members Section */}
       <div className="mt-8 bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Team Members</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Team Members</h3>
+            <span className="text-sm text-gray-500">
+              {filteredTeamMembers.length} of {teamMembers?.length || 0} members
+            </span>
+          </div>
+          
+          {/* Search and Filter Controls */}
+          <div className="mb-6 space-y-4 sm:space-y-0 sm:flex sm:space-x-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <label htmlFor="search" className="sr-only">Search team members</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  id="search"
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  placeholder="Search by name or email..."
+                />
+              </div>
+            </div>
+            
+            {/* Status Filter */}
+            <div className="sm:w-48">
+              <label htmlFor="status-filter" className="sr-only">Filter by status</label>
+              <select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              >
+                <option value="">All Statuses</option>
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           
           {teamLoading ? (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
             </div>
-          ) : teamMembers && teamMembers.length > 0 ? (
+          ) : filteredTeamMembers.length > 0 ? (
             <div className="space-y-3">
-              {teamMembers.map((member) => (
+              {filteredTeamMembers.map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
@@ -208,6 +269,8 @@ export default function StatusPage() {
                 </div>
               ))}
             </div>
+          ) : teamMembers && teamMembers.length > 0 ? (
+            <p className="text-gray-500 text-center py-4">No team members match your search criteria</p>
           ) : (
             <p className="text-gray-500 text-center py-4">No team members found</p>
           )}
