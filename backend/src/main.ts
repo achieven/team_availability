@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import * as session from 'express-session';
 import RedisStore from 'connect-redis';
-import { createClient } from 'redis';
+import { Redis } from 'ioredis';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -17,23 +17,18 @@ async function bootstrap() {
     exposedHeaders: ['Set-Cookie'],
   });
 
-  // Global prefix
   app.setGlobalPrefix('api');
 
-  // Validation pipe
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
   }));
 
-  // Redis client for sessions
-  const redisClient = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-  });
-  await redisClient.connect();
+  const redisHost = process.env.REDIS_HOST || 'redis'
+  const redisPort = parseInt(process.env.REDIS_PORT) || 6379
+  const redisClient = new Redis(redisPort, redisHost);
 
-  // Session configuration with Redis store
   app.use(
     session({
       store: new RedisStore({ client: redisClient }),

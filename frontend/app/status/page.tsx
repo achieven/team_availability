@@ -133,7 +133,7 @@ export default function StatusPage() {
                   Update Your Status
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Hello {user?.name}, you are {currentStatus?.status}
+                  Hello {user?.name} {currentStatus?.status ? `, you are ${currentStatus?.status}` : ''}
                 </p>
               </div>
               <button

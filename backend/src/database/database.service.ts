@@ -12,7 +12,8 @@ export class DatabaseService implements OnModuleInit {
   private async initCluster() {
     try {
         console.log('Connecting to Couchbase cluster');
-        const connectionString = process.env.COUCHBASE_URL || 'couchbase://localhost';
+        const host = process.env.COUCHBASE_HOST || 'localhost';
+        const connectionString = `couchbase://${host}`
         const username = process.env.COUCHBASE_USERNAME || 'Administrator';
         const password = process.env.COUCHBASE_PASSWORD || 'password';
         this.cluster = await couchbase.connect(connectionString, {
@@ -33,7 +34,7 @@ export class DatabaseService implements OnModuleInit {
     return this.cluster;
   }
 
-  
+
 
   private async createIndexes() {
     try {

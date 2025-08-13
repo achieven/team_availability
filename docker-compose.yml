@@ -33,6 +33,35 @@ services:
       - redis_data:/data
     restart: always
 
+  my_backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        - BUILDKIT_PROGRESS=plai
+    container_name: my_backend
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      COUCHBASE_HOST: couchbase
+      COUCHBASE_PORT: 11210
+      COUCHBASE_USERNAME: Administrator
+      COUCHBASE_PASSWORD: password
+      NODE_ENV: local
+    env_file:
+      - backend/.env
+    depends_on:
+      - my_redis
+      - my_couchbase
+    restart: always
+    deploy: 
+      replicas: 1
+  
+
+
 volumes:
   couchbase_data:
   redis_data:
