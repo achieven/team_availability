@@ -7,7 +7,30 @@ import { MutateInSpec, TransactionAttemptContext } from 'couchbase';
 @Injectable()
 export class UserDaoService extends BaseDaoService implements OnModuleInit {
     private dummyUsers = [
-        'a@gmail.com', 'b@gmail.com', 'c@gmail.com'
+        {
+            email: 'a@gmail.com',
+            name: 'a'
+        },
+        {
+            email: 'b@gmail.com',
+            name: 'b'
+        },
+        {
+            email: 'c@gmail.com',
+            name: 'c'
+        },
+        {
+            email: 'd@gmail.com',
+            name: 'd'
+        },
+        {
+            email: 'e@gmail.com',
+            name: 'e'
+        },
+        {
+            email: 'f@gmail.com',
+            name: 'f'
+        },
     ];
 
     constructor(
@@ -64,9 +87,10 @@ export class UserDaoService extends BaseDaoService implements OnModuleInit {
             const id = this.generateId();
             insertPromises.push(transactionCtx.insert(this.collection, id ,{
                 id,
-                email: user,
+                email: user.email,
+                name: user.name,
                 password: hashedPassword,
-                teamId: index === 0 ? teamIds[0] : teamIds[1]
+                teamId: index % 2 === 0 ? teamIds[0] : teamIds[1]
             }));
         });
         return await Promise.all(insertPromises);
@@ -76,7 +100,7 @@ export class UserDaoService extends BaseDaoService implements OnModuleInit {
     async getDummyUsers(transactionCtx: TransactionAttemptContext | null): Promise<any> {
         const query = `
             SELECT * FROM ${this.bucketScopeCollection} 
-            WHERE email IN [${this.dummyUsers.map(user => `"${user}"`).join(',')}]
+            WHERE email IN [${this.dummyUsers.map(user => `"${user.email}"`).join(',')}]
         `;
         if (transactionCtx) {
             const result = await transactionCtx.query(query);
