@@ -41,7 +41,7 @@ Frontend:
 
 ## TODO:
 - Frontend:
-    - Hello Mr <lastname> instead of username
+    - Hello Mr <lastname> instead of username (split to first & last name)
     - Not using common variable for api host
     - Missing pagination on team members
     - Update status is a form instead of button click
