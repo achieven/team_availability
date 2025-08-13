@@ -37,16 +37,14 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      args:
-        - BUILDKIT_PROGRESS=plai
     container_name: my_backend
     ports:
       - '3001:3001'
     environment:
       PORT: 3001
-      REDIS_HOST: redis
+      REDIS_HOST: my_redis
       REDIS_PORT: 6379
-      COUCHBASE_HOST: couchbase
+      COUCHBASE_HOST: my_couchbase
       COUCHBASE_PORT: 11210
       COUCHBASE_USERNAME: Administrator
       COUCHBASE_PASSWORD: password
@@ -56,6 +54,22 @@ services:
     depends_on:
       - my_redis
       - my_couchbase
+    restart: always
+    deploy: 
+      replicas: 1
+
+  my_frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: my_frontend
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://my_backend:3001
+    depends_on:
+      - my_backend
     restart: always
     deploy: 
       replicas: 1

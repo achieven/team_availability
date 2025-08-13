@@ -189,6 +189,14 @@ Make sure to set up the environment variables and database connections according
 4. Add tests if applicable
 5. Submit a pull request
 
+
+## TODO:
+- Hello Mr <lastname> instead of username
+- username not showing after login (need to call the '/me' endpoint instead of returning in the login)
+- ottomanjs
+- cleaner FE code
+- flickering FE
+
 ## License
 
 This project is licensed under the MIT License.
