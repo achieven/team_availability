@@ -29,35 +29,28 @@ export class TeamDaoService extends BaseDaoService implements OnModuleInit {
         return result.rows[0] ? result.rows[0][this.collectionName] : null;
     }
 
-    async insertTeams(transactionCtx: TransactionAttemptContext, users: string[]): Promise<any> {
-        const half = Math.ceil(users.length / 2);
-        const firstHalf = users.slice(0, half);
-        const secondHalf = users.slice(half);
-
-        const teams = this.dummyTeams.map((team, index) => {
-            return {
-                name: team,
-                members: index === 0 ? firstHalf : secondHalf
-            }
-        });
-
+    async insertTeams(transactionCtx: TransactionAttemptContext): Promise<any> {
         let insertPromises = [];
 
-        for (const team of teams) {
+        for (const team of this.dummyTeams) {
             const id = this.generateId();
             insertPromises.push(transactionCtx.insert(this.collection, id, {
                 id,
-                ...team
+                name: team
             }));
         }
 
-        await Promise.all(insertPromises);
+        const result = await Promise.all(insertPromises);
+        return result.map((row) => {
+            return {
+                id: row.id.key,
+            }
+        });
     }
 
-    async getDummyTeams(transactionCtx: TransactionAttemptContext | null, userIds: any[]): Promise<any> {
+    async getDummyTeams(transactionCtx: TransactionAttemptContext | null): Promise<any> {
         const query = `
             SELECT * FROM ${this.bucketScopeCollection} 
-            WHERE ANY member IN members SATISFIES member IN [${userIds.map(id => `"${id}"`).join(',')}] END
         `;
         if (transactionCtx) {
             const result = await transactionCtx.query(query);

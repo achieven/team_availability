@@ -48,16 +48,27 @@ export class UserDaoService extends BaseDaoService implements OnModuleInit {
         return result.rows[0];
     }
 
-    async insertUsers(transactionCtx: TransactionAttemptContext, hashedPassword: string): Promise<any> {
-        let insertPromises = [];  
-        for (const user of this.dummyUsers) {
+    async getTeamMembers(teamId: string, userId: string): Promise<any> {
+        const query = `
+            SELECT * FROM ${this.bucketScopeCollection} 
+            WHERE teamId = $teamId AND id != $userId
+        `;
+        const result = await this.cluster.query(query, {parameters: {teamId, userId}});
+        return result.rows.map(row => row[this.collectionName]);
+    }
+    
+
+    async insertUsers(transactionCtx: TransactionAttemptContext, hashedPassword: string, teamIds: string[]): Promise<any> {
+        let insertPromises = [];
+        this.dummyUsers.forEach((user, index) => {
             const id = this.generateId();
             insertPromises.push(transactionCtx.insert(this.collection, id ,{
                 id,
                 email: user,
                 password: hashedPassword,
+                teamId: index === 0 ? teamIds[0] : teamIds[1]
             }));
-        }
+        });
         return await Promise.all(insertPromises);
         
     }

@@ -21,7 +21,7 @@ export const fetchCurrentStatus = createAsyncThunk(
   'status/fetchCurrent',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get('http://localhost:3001/api/status/current', {
+      const response = await axios.get('http://localhost:3001/api/user/current-status', {
         withCredentials: true
       });
       return response.data;
@@ -35,7 +35,7 @@ export const updateStatus = createAsyncThunk(
   'status/update',
   async (status: string, { rejectWithValue }) => {
     try {
-      const response = await axios.put('http://localhost:3001/api/status/update',{status}, {
+      const response = await axios.put('http://localhost:3001/api/user/update-status',{status}, {
         withCredentials: true
       });
       return response.data;

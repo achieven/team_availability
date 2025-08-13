@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { AppDispatch, RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import { fetchCurrentStatus, updateStatus, clearError } from '../../store/slices/statusSlice';
+import { fetchTeamMembers } from '../../store/slices/teamSlice';
 
 interface StatusForm {
   status: string;
@@ -25,6 +26,7 @@ export default function StatusPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const { currentStatus, loading, error } = useSelector((state: RootState) => state.status as any);
+  const { members: teamMembers, loading: teamLoading } = useSelector((state: RootState) => state.team);
   const hasRedirected = useRef(false);
   
   console.log('Auth state:', { isAuthenticated, user });
@@ -49,6 +51,7 @@ export default function StatusPage() {
     if (isAuthenticated) {
       console.log('Fetching current status');
       dispatch(fetchCurrentStatus());
+      dispatch(fetchTeamMembers(user?.id || ''));
     }
   }, [isAuthenticated]); // Remove router and dispatch from dependencies
 
@@ -167,6 +170,47 @@ export default function StatusPage() {
               </div>
             </form>
           </div>
+        </div>
+      </div>
+      
+      {/* Team Members Section */}
+      <div className="mt-8 bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Team Members</h3>
+          
+          {teamLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+            </div>
+          ) : teamMembers && teamMembers.length > 0 ? (
+            <div className="space-y-3">
+              {teamMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {member.name?.charAt(0)?.toUpperCase() || member.email?.charAt(0)?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{member.name}</p>
+                      <p className="text-xs text-gray-500">{member.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {member.status && (
+                      <div className={`w-3 h-3 rounded-full ${getStatusColor(member.status)}`}></div>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      {member.status ? getStatusLabel(member.status) : 'Unknown'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No team members found</p>
+          )}
         </div>
       </div>
     </div>

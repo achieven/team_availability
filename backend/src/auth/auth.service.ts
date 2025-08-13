@@ -8,7 +8,7 @@ export interface User {
   email: string;
   name: string;
   password: string;
-  type: 'user';
+  teamId: string;
 }
 
 export interface LoginDto {
@@ -39,14 +39,14 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userDaoService.findUserByEmail(email);
     if (user && await this.comparePassword(password, user.password)) {
-      const { password, ...result } = user;
-      return result;
+      return this.omitPassword(user);
     }
     return null;
   }
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -55,29 +55,8 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        teamId: user.teamId,
     };
-  }
-
-  async register(registerDto: RegisterDto) {//not unique
-    const existingUser = await this.userDaoService.findUserByEmail(registerDto.email);
-    if (existingUser) {
-      throw new UnauthorizedException('User already exists');
-    }
-
-    const hashedPassword = await this.hashPassword(registerDto.password);
-
-    const user: User = {
-      id: uuidv4(),
-      email: registerDto.email,
-      name: registerDto.name,
-      password: hashedPassword,
-      type: 'user',
-    };
-
-    await this.userDaoService.insert(user);
-
-    const { password, ...result } = user;
-    return result;
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
@@ -97,5 +76,10 @@ export class AuthService {
       console.error('Error finding user by email:', error);
       return null;
     }
+  }
+
+  omitPassword(user: User): any {
+    const { password, ...result } = user;
+    return result;
   }
 }

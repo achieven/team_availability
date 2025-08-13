@@ -21,21 +21,22 @@ export class TransactionsDaoService implements OnModuleInit {
     }
 
     async initializeDB(hashedPassword: string) {
-        let userIds: any[] = [];
+        let teamIds: any[] = [];
         await this.cluster.transactions().run(async (transactionCtx) => {
+            let teams = await this.teamDaoService.getDummyTeams(transactionCtx);
+            if (teams.length === 0) {
+                teams =await this.teamDaoService.insertTeams(transactionCtx);
+            }
+            const teamIds = teams.map(team => team.id);
             let users = await this.userDaoService.getDummyUsers(transactionCtx);
             if (users.length === 0) {
-                users = await this.userDaoService.insertUsers(transactionCtx, hashedPassword);
+                users = await this.userDaoService.insertUsers(transactionCtx, hashedPassword, teamIds);
             }
-            userIds = users.map(user => user.id);
-            let teams = await this.teamDaoService.getDummyTeams(transactionCtx, userIds);
-            if (teams.length === 0) {
-                teams =await this.teamDaoService.insertTeams(transactionCtx, userIds);
-            }
+            
         });
 
         const users = await this.userDaoService.getDummyUsers(null);
-        const teams = await this.teamDaoService.getDummyTeams(null, userIds);
+        const teams = await this.teamDaoService.getDummyTeams(null);
         return { users, teams };
     }
 

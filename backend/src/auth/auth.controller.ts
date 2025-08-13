@@ -12,20 +12,8 @@ export class AuthController {
         const user = await this.authService.login(loginDto);
         req.session.userId = user.id;
         req.session.userEmail = user.email;
+        req.session.teamId = user.teamId;
         res.status(200).json(user);
-    } catch (error) {
-        if (error instanceof UnauthorizedException) {
-            throw error
-        }
-        res.status(500).json({error: 'Internal server error'});
-    }
-  }
-
-  @Post('register')
-  async register(@Body() registerDto: RegisterDto, @Request() req, @Res() res) {
-    try {
-        const result = await this.authService.register(registerDto);
-        res.status(200).json(result);
     } catch (error) {
         if (error instanceof UnauthorizedException) {
             throw error
@@ -51,7 +39,7 @@ export class AuthController {
     return {
       userId: req.session.userId,
       userEmail: req.session.userEmail,
-      message: 'Authenticated via session'
+      teamId: req.session.teamId,
     };
   }
 }
