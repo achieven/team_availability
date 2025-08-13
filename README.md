@@ -21,6 +21,13 @@ docker compose up -d
 # wait 60 seconds for couchbase to install
 ```
 
+## Credentials:
+- Upon entering, you will see a button to initialize the database with the dummy data.
+- After initialization it will return the list of users and teams.
+- The users are essentially - a@gmail.com, b@gmail.com, ...., f@gmail.com
+- the password for each user is "12345678".
+
+
 ## Troubleshooting
     - Couchbase not running smooth - let me know
 
