@@ -56,7 +56,7 @@ Frontend:
     - Eternal spinner when not logged in and going to /status route
 
 - Backend:
-    - ottomanjs for more readable query builder
+    - ottomanjs for more readable query builder and DB schema constraints
     - server side parameter validation
 
 ## License
