@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { clearProfile } from './initializeSlice';
 
-// Define getProfile here since it's used in this slice
 export const getProfile = createAsyncThunk(
   'initialize/profile',
   async (_, { rejectWithValue }) => {
@@ -47,15 +46,12 @@ export const login = createAsyncThunk(
       });
       const { user } = response.data;
       
-      // After successful login, fetch the full profile
       try {
         const profileResponse = await axios.get('http://localhost:3001/api/auth/me', {
           withCredentials: true,
         });
-        // Dispatch the profile to initializeSlice
         dispatch(getProfile());
       } catch (profileError) {
-        // If profile fetch fails, we still have the basic user info from login
         console.warn('Failed to fetch profile after login:', profileError);
       }
       
@@ -112,7 +108,6 @@ const authSlice = createSlice({
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
-        state.isAuthenticated = false;
       }).addCase(getProfile.pending, (state) => {
         state.loading = true;
         state.error = null;

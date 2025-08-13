@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { Statuses } from './initializeSlice';
 
 export interface Status {
-  status: 'available' | 'busy' | 'away' | 'offline';
+  status: Statuses;
 }
 
 interface StatusState {

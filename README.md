@@ -191,9 +191,8 @@ Make sure to set up the environment variables and database connections according
 
 
 ## TODO:
-- update statuses with list from task
+- grey on vacation
 - Hello Mr <lastname> instead of username
-- username not showing after login (need to call the '/me' endpoint instead of returning in the login)
 - ottomanjs
 - flickering FE
 - cleaner FE code

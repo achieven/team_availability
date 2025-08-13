@@ -2,11 +2,18 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { getProfile } from './authSlice';
 
+export enum Statuses {
+  working = 'Working',
+  workingRemotely = 'Working Remotely',
+  onVacation = 'On Vacation',
+  businessTrip = 'Business Trip',
+}
+
 interface User {
   id: string;
   email: string;
   name: string;
-  status: 'available' | 'busy' | 'away' | 'offline';
+  status: Statuses;
 }
 
 interface InitializeState {

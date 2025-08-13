@@ -9,16 +9,17 @@ import { logout, getProfile } from '../../store/slices/authSlice';
 import { fetchCurrentStatus, updateStatus, clearError } from '../../store/slices/statusSlice';
 import { fetchTeamMembers } from '../../store/slices/teamSlice';
 import { selectUser } from '../../store/slices/initializeSlice';
+import { Statuses } from '../../store/slices/initializeSlice';
 
 interface StatusForm {
   status: string;
 }
 
 const statusOptions = [
-  { value: 'available', label: 'Available', color: 'bg-green-500' },
-  { value: 'busy', label: 'Busy', color: 'bg-red-500' },
-  { value: 'away', label: 'Away', color: 'bg-yellow-500' },
-  { value: 'offline', label: 'Offline', color: 'bg-gray-500' },
+  { value: Statuses.working, label: Statuses.working, color: 'bg-green-500' },
+  { value: Statuses.workingRemotely, label: Statuses.workingRemotely, color: 'bg-red-500' },
+  { value: Statuses.onVacation, label: Statuses.onVacation, color: 'bg-gray-500' },
+  { value: Statuses.businessTrip, label: Statuses.businessTrip, color: 'bg-yellow-500' },
 ];
 
 export default function StatusPage() {
@@ -29,7 +30,6 @@ export default function StatusPage() {
   const user = useSelector(selectUser);
   const { currentStatus, loading, error } = useSelector((state: RootState) => state.status as any);
   const { members: teamMembers, loading: teamLoading } = useSelector((state: RootState) => state.team);
-  const hasRedirected = useRef(false);
   
   console.log('StatusPage state:', { isAuthenticated, user, currentStatus, loading, error });
   
