@@ -48,9 +48,8 @@ services:
       COUCHBASE_PORT: 11210
       COUCHBASE_USERNAME: Administrator
       COUCHBASE_PASSWORD: password
+      SESSION_SECRET=your-super-secret-session-key-change-this-in-production
       NODE_ENV: local
-    env_file:
-      - backend/.env
     depends_on:
       - my_redis
       - my_couchbase
