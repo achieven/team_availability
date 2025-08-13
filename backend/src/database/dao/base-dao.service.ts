@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OnModuleInit } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from '../database.service';
-import { Cluster, Bucket, Collection, Scope, DocumentNotFoundError, MutateInSpec } from 'couchbase';
+import { Cluster, Bucket, Collection, Scope, DocumentNotFoundError, MutateInSpec, CollectionQueryIndexManager } from 'couchbase';
 
 @Injectable()
 export class BaseDaoService implements OnModuleInit {
@@ -13,6 +13,11 @@ export class BaseDaoService implements OnModuleInit {
     protected scopeName  : string;
     protected collection : Collection;
     protected collectionName : string;
+    protected indexManager : CollectionQueryIndexManager;
+    protected indexCreationOptions = {
+        ignoreIfExists: true,
+        deferred: true
+    }
     
     constructor(
         bucketName: string,
@@ -32,7 +37,7 @@ export class BaseDaoService implements OnModuleInit {
   
         console.log(`Connected to bucket: ${this.bucketName}, scope: ${this.scopeName}, collection: ${this.collectionName}`);
   
-        await this.createIndexes();
+        await this.createIndexManager();
     }
 
     protected get bucketScopeCollection() {
@@ -40,41 +45,23 @@ export class BaseDaoService implements OnModuleInit {
     }
     
     async insert(doc: any): Promise<any> {
-        const id = doc.id || doc._id || this.generateId();
-        const document = { ...doc, id, _id: id };
-        const result = await this.collection.insert(id, document);
-        return { id, ...document, cas: result.cas };
-    }
-
-    async mutateIn(key: string, specs: any[], options?: any): Promise<any> {
-    const collection = await this.collection;
-    console.log(this.collectionName,'mutateIn', key);
-    return collection.mutateIn(key, specs, options);
-    }
-    
-    async update(id: string, doc: any): Promise<any> {
         try {
-            const existing = await this.collection.get(id);
-            const updatedDoc = { ...existing.content, ...doc, id, _id: id };
-            const result = await this.collection.replace(id, updatedDoc, { cas: existing.cas });
-            return { id, ...updatedDoc, cas: result.cas };
-        } catch (error: any) {
-            if (error.code === DocumentNotFoundError) {
-            // Document doesn't exist, create it
-            return await this.insert(doc);
-            }
+            const id = doc.id || doc._id || this.generateId();
+            const document = { ...doc, id, _id: id };
+            const result = await this.collection.insert(id, document);
+            return { id, ...document, cas: result.cas };
+        } catch (error) {
+            console.error('Insert error:', error);
             throw error;
         }
     }
-    
-    async delete(id: string): Promise<any> {
+
+    async mutateIn(key: string, specs: any[], options?: any): Promise<any> {
         try {
-            const result = await this.collection.remove(id);
-            return { id, cas: result.cas };
-        } catch (error: any) {
-            if (error.code === DocumentNotFoundError) {
-            return null;
-            }
+        const collection = await this.collection;
+        return collection.mutateIn(key, specs, options);
+        } catch (error) {
+            console.error('MutateIn error:', error);
             throw error;
         }
     }
@@ -93,5 +80,7 @@ export class BaseDaoService implements OnModuleInit {
         return uuidv4();
     }
 
-    protected async createIndexes(): Promise<void> {}
+    protected async createIndexManager(): Promise<void> {
+        this.indexManager = new CollectionQueryIndexManager(this.collection);
+    }
 }

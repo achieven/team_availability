@@ -26,38 +26,4 @@ export class UserService {
       return this.authService.omitPassword(member);
     });
   }
-
-  async getAllStatuses(): Promise<Status[]> {
-    try {
-      const query = `
-        SELECT s.* FROM \`team_availability\`.\`_default\`.\`_default\` s
-        WHERE s.type = "status"
-        AND s.lastUpdated = (
-          SELECT MAX(s2.lastUpdated) 
-          FROM \`team_availability\`.\`_default\`.\`_default\` s2 
-          WHERE s2.type = "status" AND s2.userId = s.userId
-        )
-      `;
-      const result = await this.userDaoService.query(query);
-      return result;
-    } catch (error) {
-      console.error('Error getting all statuses:', error);
-      return [];
-    }
-  }
-
-  async getUserStatuses(userId: string): Promise<Status[]> {
-    try {
-      const query = `
-        SELECT * FROM \`team_availability\`.\`_default\`.\`_default\` 
-        WHERE type = "status" AND userId = $userId 
-        ORDER BY lastUpdated DESC
-      `;
-      const result = await this.userDaoService.query(query, [userId]);
-      return result;
-    } catch (error) {
-      console.error('Error getting user statuses:', error);
-      return [];
-    }
-  }
 }

@@ -33,44 +33,4 @@ export class DatabaseService implements OnModuleInit {
     }
     return this.cluster;
   }
-
-
-
-  private async createIndexes() {
-    try {
-      
-      // Create indexes for users
-      await this.cluster.query(`
-        CREATE INDEX idx_users_email ON \`default\`.\`_default\`.\`team_availability\` (email) 
-        WHERE type = "user"
-      `).catch(err => {
-        if (!err.message.includes('already exists')) {
-          console.error('Error creating users email index:', err);
-        }
-      });
-
-      // Create indexes for status
-      await this.cluster.query(`
-        CREATE INDEX idx_status_userId ON \`default\`.\`_default\`.\`team_availability\` (userId) 
-        WHERE type = "status"
-      `).catch(err => {
-        if (!err.message.includes('already exists')) {
-          console.error('Error creating status userId index:', err);
-        }
-      });
-
-      await this.cluster.query(`
-        CREATE INDEX idx_status_userId_lastUpdated ON \`default\`.\`_default\`.\`team_availability\` (userId, lastUpdated) 
-        WHERE type = "status"
-      `).catch(err => {
-        if (!err.message.includes('already exists')) {
-          console.error('Error creating status userId_lastUpdated index:', err);
-        }
-      });
-
-      console.log('Indexes created successfully');
-    } catch (error) {
-      console.error('Error creating indexes:', error);
-    }
-  }
 }

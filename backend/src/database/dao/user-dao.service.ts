@@ -110,5 +110,14 @@ export class UserDaoService extends BaseDaoService implements OnModuleInit {
         return result.map(row => row[this.collectionName]);
     }
 
-    protected async createIndexes(): Promise<void> {}
+    async ensureIndexes() {
+        await this.indexManager.createIndex('user_email', 
+            ['email'],
+            this.indexCreationOptions
+        );
+        await this.indexManager.createIndex('team_members', 
+            ['teamId',  'id'],
+            this.indexCreationOptions
+        );
+    }
 }

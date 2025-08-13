@@ -19,16 +19,6 @@ export class TeamDaoService extends BaseDaoService implements OnModuleInit {
         super.onModuleInit();
     }
 
-    async getAllTeams(email: string): Promise<any | null> {
-        const query = `
-            SELECT * FROM ${this.bucketScopeCollection} 
-            WHERE email = $email AND type = "user" 
-            LIMIT 1
-        `;
-        const result = await this.cluster.query(query, {parameters: {email}});
-        return result.rows[0] ? result.rows[0][this.collectionName] : null;
-    }
-
     async insertTeams(transactionCtx: TransactionAttemptContext): Promise<any> {
         let insertPromises = [];
 
@@ -60,5 +50,5 @@ export class TeamDaoService extends BaseDaoService implements OnModuleInit {
         return result.map(row => row[this.collectionName]);
     }
 
-    protected async createIndexes(): Promise<void> {}
+    async ensureIndexes(): Promise<void> {}
 }

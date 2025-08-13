@@ -10,10 +10,10 @@ export class UserController {
   @Get('current-status')
   async getCurrentStatus(@Request() req, @Res() res) {
     try {
-    let status = await this.userService.getCurrentStatus(req.session.userId);
-    if (!status) {
-        status =  {status: 'offline'};
-    }
+      let status = await this.userService.getCurrentStatus(req.session.userId);
+      if (!status) {
+          status =  {status: 'offline'};
+      }
       res.status(200).json(status);
     } catch (error) {
       console.error('Error getting current status:', error);
@@ -28,22 +28,18 @@ export class UserController {
       res.status(200).json(status);
     } catch (error) {
       console.error('Error updating status:', error);
-      res.status(500).json({result: false});
+      res.status(500).json({error: 'Internal server error'});
     }
   }
 
   @Get('team-members')
-  async getTeamMembers(@Request() req) {
-    return await this.userService.getTeamMembers(req.session.teamId, req.session.userId);
-  }
-
-  @Get('all')
-  async getAllStatuses() {
-    return await this.userService.getAllStatuses();
-  }
-
-  @Get('user')
-  async getUserStatuses(@Request() req) {
-    return await this.userService.getUserStatuses(req.session.userId);
+  async getTeamMembers(@Request() req, @Res() res) {
+    try {
+      const teamMembers = await this.userService.getTeamMembers(req.session.teamId, req.session.userId);
+      res.status(200).json(teamMembers);
+    } catch (error) {
+      console.error('Error getting team members:', error);
+      res.status(500).json({error: 'Internal server error'});
+    }
   }
 }

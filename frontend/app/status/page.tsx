@@ -23,7 +23,6 @@ const statusOptions = [
 ];
 
 export default function StatusPage() {
-  console.log('StatusPage component rendered');
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -31,15 +30,12 @@ export default function StatusPage() {
   const { currentStatus, loading, error } = useSelector((state: RootState) => state.status as any);
   const { members: teamMembers, loading: teamLoading } = useSelector((state: RootState) => state.team);
   
-  console.log('StatusPage state:', { isAuthenticated, user, currentStatus, loading, error });
   
-  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   
-  console.log('Auth state:', { isAuthenticated, user });
   
   const {
     register,
@@ -49,22 +45,13 @@ export default function StatusPage() {
   } = useForm<StatusForm>();
 
   useEffect(() => {
-    console.log('StatusPage useEffect - user:', user, 'isAuthenticated:', isAuthenticated);
-    
-    if (!user) {
-      // User is authenticated but profile not loaded, fetch it
-      console.log('Fetching profile...');
+    if (user) {
+        dispatch(fetchCurrentStatus());
+        dispatch(fetchTeamMembers(user.id));
+      }
+    else {
       dispatch(getProfile());
-    } else if (user) {
-      // User profile is available, fetch status and team members
-      console.log('Fetching status and team members...');
-      dispatch(fetchCurrentStatus());
-      dispatch(fetchTeamMembers(user.id));
-    } else if (!isAuthenticated) {
-      // Not authenticated, redirect to login
-      console.log('Not authenticated, redirecting to login...');
-      router.push('/login');
-    }
+    } 
   }, [user, dispatch, router]);
 
   useEffect(() => {
@@ -79,7 +66,6 @@ export default function StatusPage() {
     };
   }, [dispatch]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
@@ -112,7 +98,6 @@ export default function StatusPage() {
     return option?.label || 'Unknown';
   };
 
-  // Filter team members based on search term and status filter
   const filteredTeamMembers = teamMembers?.filter((member) => {
     const matchesSearch = searchTerm === '' || 
       member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,7 +109,6 @@ export default function StatusPage() {
     return matchesSearch && matchesStatus;
   }) || [];
 
-  // Show loading state while authentication is being checked
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -133,7 +117,6 @@ export default function StatusPage() {
     );
   }
 
-  // Show loading state while user profile is being fetched
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -213,7 +196,6 @@ export default function StatusPage() {
         </div>
       </div>
       
-      {/* Team Members Section */}
       <div className="mt-8 bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center mb-4">
@@ -223,9 +205,7 @@ export default function StatusPage() {
             </span>
           </div>
           
-          {/* Search and Filter Controls */}
           <div className="mb-6 space-y-4 sm:space-y-0 sm:flex sm:space-x-4">
-            {/* Search Input */}
             <div className="flex-1">
               <label htmlFor="search" className="sr-only">Search team members</label>
               <div className="relative">
@@ -245,7 +225,6 @@ export default function StatusPage() {
               </div>
             </div>
             
-            {/* Status Filter Dropdown */}
             <div className="sm:w-48 relative" ref={statusDropdownRef}>
               <label htmlFor="status-filter" className="sr-only">Filter by status</label>
               <button

@@ -21,6 +21,7 @@ export class TransactionsDaoService implements OnModuleInit {
     }
 
     async initializeDB(hashedPassword: string) {
+        try {
         let teamIds: any[] = [];
         await this.cluster.transactions().run(async (transactionCtx) => {
             let teams = await this.teamDaoService.getDummyTeams(transactionCtx);
@@ -32,13 +33,17 @@ export class TransactionsDaoService implements OnModuleInit {
             if (users.length === 0) {
                 users = await this.userDaoService.insertUsers(transactionCtx, hashedPassword, teamIds);
             }
-            
+            await this.userDaoService.ensureIndexes();
+            await this.teamDaoService.ensureIndexes();
         });
 
         const users = await this.userDaoService.getDummyUsers(null);
         const teams = await this.teamDaoService.getDummyTeams(null);
         return { users, teams };
+    } catch (error) {
+        console.error('initializeDB transaction error:', error);
+        throw error;
+    }
     }
 
-    protected async createIndexes(): Promise<void> {}
 }
